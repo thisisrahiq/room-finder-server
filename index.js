@@ -6,7 +6,10 @@ const userRoutes    = require('./routes/userRoutes');
 const listingRoutes = require('./routes/listingRoutes');
 
 const app  = express();
-const PORT = process.env.PORT || 5000;
+let PORT = process.env.PORT || 5001;
+if (PORT === '5000' || PORT === 5000) {
+  PORT = 5001;
+}
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 const allowedOrigins = [
