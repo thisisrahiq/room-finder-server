@@ -20,8 +20,8 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error('Not allowed by CORS'));
+    // Dynamically allow any origin to support localhost, Vercel previews, and Firebase Hosting
+    callback(null, true);
   },
   credentials:     true,
   methods:         ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
