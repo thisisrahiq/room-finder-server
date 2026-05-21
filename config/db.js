@@ -11,9 +11,11 @@ const client = new MongoClient(process.env.MONGODB_URI, {
 let db;
 
 const connectDB = async () => {
+  if (db) return db;
   await client.connect();
   db = client.db('roommate_finder_db');
   console.log('✅ Connected to MongoDB Atlas — roommate_finder_db');
+  return db;
 };
 
 const getDB          = ()  => db;

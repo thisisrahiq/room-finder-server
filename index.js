@@ -30,6 +30,16 @@ app.use(cors({
 
 app.use(express.json());
 
+// ── Database Connection Middleware ────────────────────────────────────────────
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ── Health Check ──────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.json({ success: true, message: 'Roommate Finder API is running ✅' });
@@ -58,13 +68,11 @@ app.use((err, req, res, next) => {
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  
-  connectDB()
-    .catch((err) => {
-      console.error('❌ WARNING: Failed to connect to MongoDB:', err.message);
-      console.log('⚠️  Server is running but database-dependent features will fail.');
-    });
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
 
