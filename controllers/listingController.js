@@ -156,19 +156,57 @@ const likeListing = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid listing ID format' });
     }
 
-    const result = await getListingsCol().updateOne(
-      { _id: new ObjectId(req.params.id) },
-      { $inc: { likeCount: 1 } }
-    );
-
-    if (result.matchedCount === 0) {
+    const listing = await getListingsCol().findOne({ _id: new ObjectId(req.params.id) });
+    if (!listing) {
       return res.status(404).json({ success: false, message: 'Listing not found' });
+    }
+
+    if (listing.userEmail === req.user.email) {
+      return res.status(400).json({ success: false, message: 'You cannot like or unlike your own listing' });
+    }
+
+    const likedBy = Array.isArray(listing.likedBy) ? listing.likedBy : [];
+    const hasLiked = likedBy.includes(req.user.email);
+
+    let newCount = listing.likeCount || 0;
+    let message = '';
+    let liked = false;
+
+    if (hasLiked) {
+      // Unlike
+      newCount = Math.max(0, newCount - 1);
+      liked = false;
+      message = 'Listing unliked successfully';
+
+      await getListingsCol().updateOne(
+        { _id: new ObjectId(req.params.id) },
+        {
+          $pull: { likedBy: req.user.email },
+          $set: { likeCount: newCount }
+        }
+      );
+    } else {
+      // Like
+      newCount = newCount + 1;
+      liked = true;
+      message = 'Listing liked successfully';
+
+      await getListingsCol().updateOne(
+        { _id: new ObjectId(req.params.id) },
+        {
+          $addToSet: { likedBy: req.user.email },
+          $set: { likeCount: newCount }
+        }
+      );
     }
 
     res.status(200).json({
       success: true,
-      message: 'Like added successfully',
-      data:    { modifiedCount: result.modifiedCount },
+      message,
+      data: {
+        liked,
+        likeCount: newCount
+      }
     });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Internal server error', error: err.message });
