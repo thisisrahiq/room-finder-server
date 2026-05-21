@@ -55,13 +55,13 @@ app.use((err, req, res, next) => {
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
-connectDB()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  
+  connectDB()
+    .catch((err) => {
+      console.error('❌ WARNING: Failed to connect to MongoDB:', err.message);
+      console.log('⚠️  Server is running but database-dependent features will fail.');
     });
-  })
-  .catch((err) => {
-    console.error('❌ Failed to connect to MongoDB:', err.message);
-    process.exit(1);
-  });
+});
+
