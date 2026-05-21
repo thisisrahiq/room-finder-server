@@ -7,11 +7,12 @@ const VALID_AVAILABILITY = ['Available', 'Not Available'];
 // ── GET /listings ─────────────────────────────────────────────────────────────
 const getAllListings = async (req, res) => {
   try {
-    const { status, limit, userEmail } = req.query;
+    const { status, limit, userEmail, listingType } = req.query;
     const filter = {};
 
     if (status === 'available') filter.availability = 'Available';
     if (userEmail)              filter.userEmail     = userEmail;
+    if (listingType)            filter.listingType   = listingType;
 
     let cursor = getListingsCol().find(filter).sort({ createdAt: -1 });
     if (limit)  cursor = cursor.limit(parseInt(limit));
@@ -46,7 +47,7 @@ const getListingById = async (req, res) => {
 // ── POST /listings ────────────────────────────────────────────────────────────
 const createListing = async (req, res) => {
   try {
-    const { title, location, rent, roomType, lifestyle, description, contactInfo, availability } = req.body;
+    const { title, location, rent, roomType, lifestyle, description, contactInfo, availability, listingType, imageUrl } = req.body;
 
     if (!title || !location || !rent || !roomType || !description || !contactInfo || !availability) {
       return res.status(400).json({ success: false, message: 'All required fields must be provided' });
@@ -61,6 +62,9 @@ const createListing = async (req, res) => {
     if (isNaN(parsedRent) || parsedRent <= 0) {
       return res.status(400).json({ success: false, message: 'rent must be a positive number' });
     }
+    if (listingType && !['Room', 'Roommate'].includes(listingType)) {
+      return res.status(400).json({ success: false, message: "Invalid listingType. Must be 'Room' or 'Roommate'" });
+    }
 
     const result = await getListingsCol().insertOne({
       title:        title.trim(),
@@ -71,6 +75,8 @@ const createListing = async (req, res) => {
       description:  description.trim(),
       contactInfo:  contactInfo.trim(),
       availability,
+      listingType:  listingType || 'Room',
+      imageUrl:     imageUrl || '',
       likeCount:    0,
       userEmail:    req.user.email,
       userName:     req.user.name || req.user.email.split('@')[0],
@@ -95,7 +101,7 @@ const updateListing = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid listing ID format' });
     }
 
-    const { title, location, rent, roomType, lifestyle, description, contactInfo, availability } = req.body;
+    const { title, location, rent, roomType, lifestyle, description, contactInfo, availability, listingType, imageUrl } = req.body;
 
     if (!title || !location || !rent || !roomType || !description || !contactInfo || !availability) {
       return res.status(400).json({ success: false, message: 'All required fields must be provided' });
@@ -105,6 +111,9 @@ const updateListing = async (req, res) => {
     }
     if (!VALID_AVAILABILITY.includes(availability)) {
       return res.status(400).json({ success: false, message: "Invalid availability. Must be 'Available' or 'Not Available'" });
+    }
+    if (listingType && !['Room', 'Roommate'].includes(listingType)) {
+      return res.status(400).json({ success: false, message: "Invalid listingType. Must be 'Room' or 'Roommate'" });
     }
 
     const result = await getListingsCol().updateOne(
@@ -119,6 +128,8 @@ const updateListing = async (req, res) => {
           description:  description.trim(),
           contactInfo:  contactInfo.trim(),
           availability,
+          listingType:  listingType || 'Room',
+          imageUrl:     imageUrl || '',
           updatedAt:    new Date(),
         },
       }
